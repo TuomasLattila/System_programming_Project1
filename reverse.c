@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ROWSIZE 64
-
 typedef struct rows {
     char *aRow;
     struct rows *nextRow;
