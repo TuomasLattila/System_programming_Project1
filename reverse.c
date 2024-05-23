@@ -9,20 +9,44 @@ typedef struct rows {
 
 ROWS *readFile(ROWS *pStart, char *pFileName);
 ROWS *addToList(ROWS *pStart, char *pRow);
-void printInReversedOrder(ROWS *pStart);
+void writeInReversedOrder(ROWS *pStart, FILE *pFileName);
 ROWS *freeMemory(ROWS *pStart);
 
-/*At the moment the code expects one commandline argument which
-is the name of the input file.*/
+/*At the moment the code expects one or two commandline argument which
+are the names of the input file and the output file.*/
 
 int main(int argc, char *argv[]) {
+    
+    if (argc > 3) { //Tests if too many arguments given
+        printf("usage: reverse <input> <output>\n");
+        exit(1);
+    };
+
     ROWS *pStart = NULL;
 
-    pStart = readFile(pStart, argv[1]);
-    printInReversedOrder(pStart);
-
+    switch (argc) {
+        case 1: //No input or output file given
+            
+            break;    
+        case 2: //Input file given
+            pStart = readFile(pStart, argv[1]);
+            writeInReversedOrder(pStart, stdout);
+            break;
+        case 3: //Input and output files given
+            pStart = readFile(pStart, argv[1]);
+            FILE *file;
+            if ((file = fopen(argv[2], "w")) == NULL)    {
+            fprintf(stderr, "error: cannot open file '%s'\n", argv[2]);
+            exit(1);
+            };
+            writeInReversedOrder(pStart, file);
+            fclose(file);
+            break;
+        
+        default:
+            break;
+    };
     pStart = freeMemory(pStart);
-
     return 0;
 };
 
@@ -71,11 +95,12 @@ ROWS *addToList(ROWS *pStart, char *pRow)   {
     return pStart;
 };
 
-void printInReversedOrder(ROWS *pStart) {
+//print into file and take the file as an argument. (output.txt or stdout)
+void writeInReversedOrder(ROWS *pStart, FILE *pFileName) {
     ROWS *ptr = pStart;
     while (ptr != NULL) {
-        printf("%s", ptr->aRow);
-        ptr = ptr->nextRow;
+    fprintf(pFileName, "%s", ptr->aRow);
+    ptr = ptr->nextRow;
     }
     return;
 };
