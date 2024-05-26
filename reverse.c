@@ -8,6 +8,7 @@ typedef struct rows {
 }ROWS;
 
 ROWS *readFile(ROWS *pStart, char *pFileName);
+ROWS *readInput(ROWS *pStart);
 ROWS *addToList(ROWS *pStart, char *pRow);
 void writeInReversedOrder(ROWS *pStart, FILE *pFileName);
 ROWS *freeMemory(ROWS *pStart);
@@ -26,13 +27,18 @@ int main(int argc, char *argv[]) {
 
     switch (argc) {
         case 1: //No input or output file given
-            
+            pStart = readInput(pStart);
+            writeInReversedOrder(pStart, stdout);
             break;    
         case 2: //Input file given
             pStart = readFile(pStart, argv[1]);
             writeInReversedOrder(pStart, stdout);
             break;
         case 3: //Input and output files given
+            if (strcmp(argv[1], argv[2]) == 0) {
+                fprintf(stderr, "Input and output file must differ\n");
+                exit(1);
+            };
             pStart = readFile(pStart, argv[1]);
             FILE *file;
             if ((file = fopen(argv[2], "w")) == NULL)    {
@@ -42,7 +48,6 @@ int main(int argc, char *argv[]) {
             writeInReversedOrder(pStart, file);
             fclose(file);
             break;
-        
         default:
             break;
     };
@@ -62,10 +67,30 @@ ROWS *readFile(ROWS *pStart, char *pFileName) {
     };
 
     while((read = getline(&pRow, &len, file)) != -1) {
-        //printf("%s", pRow);
         pStart = addToList(pStart, pRow);
     };
     fclose(file);
+    free(pRow);
+    return pStart;
+}
+// this is where I left last time
+ROWS *readInput(ROWS *pStart) {
+    char *pRow = NULL;
+    size_t len = 0;
+    __ssize_t read;
+
+    printf("Write multiple lines (end: ctrl+D):\n\n");
+    while ((read = getline(&pRow, &len, stdin)) != -1) {
+        pStart = addToList(pStart, pRow);
+    };
+    if (feof(stdin)) {
+        printf("\nWriting ended.\n\nLines in reversed:\n\n");
+    } else if (ferror(stdin)) {
+        fprintf(stderr, "Reading from stdin failed");
+        free(pRow);
+        exit(1);
+    }
+    
     free(pRow);
     return pStart;
 }
@@ -78,7 +103,7 @@ ROWS *addToList(ROWS *pStart, char *pRow)   {
         exit(1);
     };
 
-    if ((pNew->aRow = (char *)malloc(sizeof(pRow)+1)) == NULL)  {
+    if ((pNew->aRow = (char *)malloc(strlen(pRow)+1)) == NULL)  {
         fprintf(stderr, "malloc failed\n");
         exit(1);
     };
