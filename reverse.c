@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 //struct for linked list containing the rows
 typedef struct rows {
@@ -17,12 +18,13 @@ ROWS *freeMemory(ROWS *pStart);
 int main(int argc, char *argv[]) {
     
     if (argc > 3) { //Tests if too many arguments given
-        printf("usage: reverse <input> <output>\n");
+      fprintf(stderr, "usage: reverse <input> <output>\n");
         exit(1);
     };
 
     ROWS *pStart = NULL; //start of the linked list
-
+    struct stat in, out;
+    
     switch (argc) {
         case 1: //No input or output file given
             pStart = readInput(pStart);
@@ -33,14 +35,16 @@ int main(int argc, char *argv[]) {
             writeInReversedOrder(pStart, stdout);
             break;
         case 3: //Input and output files given
-            if (strcmp(argv[1], argv[2]) == 0) { //test if the input and output files are the same
-                fprintf(stderr, "Input and output file must differ\n");
+	  stat(argv[1], &in);
+	  stat(argv[2], &out);
+            if (in.st_ino == out.st_ino) { //test if the input and output files are the same
+                fprintf(stderr, "reverse: input and output file must differ\n");
                 exit(1);
             };
             pStart = readFile(pStart, argv[1]);
             FILE *file;
             if ((file = fopen(argv[2], "w")) == NULL)    {
-                fprintf(stderr, "error: cannot open file '%s'\n", argv[2]);
+                fprintf(stderr, "reverse: cannot open file '%s'\n", argv[2]);
                 exit(1);
             };
             writeInReversedOrder(pStart, file); //write to the output file
@@ -60,7 +64,7 @@ ROWS *readFile(ROWS *pStart, char *pFileName) {
     __ssize_t read;
 
     if ((file = fopen(pFileName, "r")) == NULL)    { //opens the input file
-        fprintf(stderr, "error: cannot open file '%s'\n", pFileName);
+        fprintf(stderr, "reverse: cannot open file '%s'\n", pFileName);
         exit(1);
     };
 
@@ -77,12 +81,12 @@ ROWS *readInput(ROWS *pStart) {
     size_t len = 0;
     __ssize_t read;
 
-    printf("Write multiple lines (end: ctrl+D):\n\n");
+    //printf("Write multiple lines (end: ctrl+D):\n\n");
     while ((read = getline(&pRow, &len, stdin)) != -1) { //read from the stdin and append row to list
         pStart = addToList(pStart, pRow);
     };
     if (feof(stdin)) { //test if writing was ended
-        printf("\nWriting ended.\n\nLines in reversed:\n\n");
+        //printf("\nWriting ended.\n\nLines in reversed:\n\n");
     } else if (ferror(stdin)) {
         fprintf(stderr, "Reading from stdin failed");
         free(pRow);
